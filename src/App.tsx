@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import styled from "styled-components";
 import { getShapeBoundingBox } from "./utils";
 import { Shape } from "./canvas/shape";
+import { CanvasState } from "./canvas/canvas-state";
 
 const StyledApp = styled.div`
   height: 100%;
@@ -25,97 +26,61 @@ const StyledCanvas = styled.canvas`
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvasContext, setCanvasContext] = useState<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [startPoint, setStartPoint] = useState({ x: 0, y: 0 });
-  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const canvasState = useRef<CanvasState | null>(null);
   const [shapes, setShapes] = useState<Shape[]>([]);
+  const getShapes = () => {
+    return canvasState.current?.shapes ?? [];
+  };
 
   useEffect(() => {
     if (!canvasRef.current) {
       return;
     }
     const ctx = canvasRef.current.getContext("2d");
-    setCanvasContext(ctx);
     const image = new Image();
     image.onload = () => {
-      setImage(image);
-      attachImageToCanvas(image, ctx!);
-      // ctx!.clearRect(0, 0, ctx!.canvas.width, ctx!.canvas.height);
-      // ctx!.drawImage(image, 0, 0, ctx!.canvas.width, ctx!.canvas.height);
+      const _canvasState = new CanvasState(ctx!, image);
+      canvasState.current = _canvasState;
     };
     image.crossOrigin = "anonymous";
     image.src = "/image.jpg";
   }, []);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    if (!canvasContext) {
+    if (!canvasState.current) {
       return;
     }
-    canvasContext.beginPath();
-    canvasContext.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
 
-    const shape = new Shape();
-
-    shape.pushPoint({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
-    setShapes((state) => [...state, shape]);
-    setStartPoint({
+    canvasState.current.pushPointToState({
       x: e.nativeEvent.offsetX,
       y: e.nativeEvent.offsetY,
     });
-
-    canvasContext.strokeStyle = "green";
-    canvasContext.lineWidth = 5;
     setIsDrawing(true);
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    if (!canvasContext) {
+    if (!canvasState.current) {
       return;
     }
-    const currentShape = shapes.at(-1);
-    if (!currentShape) {
-      return;
-    }
-
-    canvasContext.lineTo(startPoint.x, startPoint.y);
-
-    currentShape.pushPoint(startPoint);
-
-    canvasContext.stroke();
-    canvasContext.save();
-    canvasContext.clip();
-    canvasContext.fillStyle = "gray";
-    canvasContext.fill();
-    canvasContext.restore();
-    setStartPoint({ x: 0, y: 0 });
-
-    currentShape.retrieveImage(image!, canvasContext.canvas.width, canvasContext.canvas.height);
+    canvasState.current.pushPointToState({
+      x: e.nativeEvent.offsetX,
+      y: e.nativeEvent.offsetY,
+    });
+    canvasState.current.nextState();
+    setShapes([...getShapes()]);
     setIsDrawing(false);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     if (!isDrawing) return;
-    if (!canvasContext) {
+    if (!canvasState.current) {
       return;
     }
-
-    const currentShape = shapes.at(-1);
-    if (!currentShape) {
-      return;
-    }
-    canvasContext.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    canvasContext.stroke();
-    currentShape.pushPoint({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY });
-  };
-
-  const attachImageToCanvas = (image: CanvasImageSource, canvasContext: CanvasRenderingContext2D) => {
-    if (!canvasContext) {
-      console.log("no context");
-      return;
-    }
-    canvasContext.clearRect(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
-    canvasContext.drawImage(image, 0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
+    canvasState.current.pushPointToState({
+      x: e.nativeEvent.offsetX,
+      y: e.nativeEvent.offsetY,
+    });
   };
 
   return (
@@ -124,7 +89,15 @@ function App() {
         {shapes.map(
           (shape, index) =>
             shape.image && (
-              <div key={index}>
+              <div
+                key={index}
+                onClick={() => {
+                  canvasState.current?.deleteStage(index);
+                  const shapes = getShapes();
+                  console.log(shapes);
+                  setShapes([...shapes]);
+                }}
+              >
                 <img src={shape.image} alt="" />
               </div>
             )

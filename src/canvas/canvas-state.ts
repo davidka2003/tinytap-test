@@ -6,15 +6,27 @@ export interface ICanvasState {
 }
 
 export class CanvasState {
-  private readonly _state: ICanvasState[] = [];
+  private readonly _state: ICanvasState[] = [
+    {
+      points: [],
+    },
+  ];
   private readonly _shapes: Shape[] = [];
   constructor(private readonly canvasContext: CanvasRenderingContext2D, private readonly image: HTMLImageElement) {
-    this.nextState();
-
+    // this.nextState();
+    this._attachImage(image);
     canvasContext.fillStyle = "gray";
+    canvasContext.strokeStyle = "green";
+    canvasContext.lineWidth = 5;
   }
 
-  public drawShape(points: IPoint[]) {
+  private _attachImage(image: HTMLImageElement) {
+    const { canvas } = this.canvasContext;
+    this.canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+    this.canvasContext.drawImage(image, 0, 0, canvas.width, canvas.height);
+  }
+
+  private _drawShape(points: IPoint[]) {
     const { canvas } = this.canvasContext;
     const shape = new Shape();
     points.forEach((point) => shape.pushPoint(point));
@@ -27,9 +39,26 @@ export class CanvasState {
     if (!currentState) {
       return;
     }
+    if (!currentState.points.length) {
+      this.canvasContext.beginPath();
+      this.canvasContext.moveTo(point.x, point.y);
+    }
 
     currentState.points.push(point);
     this._renderPoint(point);
+  }
+
+  private _renderState(state: ICanvasState) {
+    this.canvasContext.beginPath();
+    state.points.forEach((point, index) => {
+      if (index === 0) {
+        this.canvasContext.moveTo(point.x, point.y);
+      }
+      state.points.push(point);
+      this._renderPoint(point);
+    });
+    this.canvasContext.closePath();
+    this._renderEmptyArea();
   }
 
   private _renderPoint(point: IPoint) {
@@ -46,16 +75,34 @@ export class CanvasState {
   }
 
   public nextState() {
+    const currentState = this._state.at(-1);
+    if (!currentState) {
+      return;
+    }
+
+    this._renderPoint(currentState.points[0]);
+    this._drawShape(currentState.points);
+    this.canvasContext.closePath();
     this._renderEmptyArea();
     this._state.push({
       points: [],
     });
+    this.canvasContext.beginPath();
+  }
+
+  public deleteStage(stageIndex: number) {
+    this._state.splice(stageIndex, 1);
+    this._shapes.splice(stageIndex, 1);
+    this.render();
   }
 
   public render() {
-    this._state.forEach((state) => {
-      state.points.forEach((point) => this._renderPoint(point));
-      this._renderEmptyArea();
-    });
+    this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
+    this._attachImage(this.image);
+    this._state.forEach((state) => this._renderState(state));
+  }
+
+  public get shapes() {
+    return this._shapes;
   }
 }

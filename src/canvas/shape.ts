@@ -48,7 +48,7 @@ export class Shape {
 
     // Get the Data URL of the clipped triangle
     const dataUrl = clippedCanvas.toDataURL();
-    console.log(dataUrl);
+
     this._image = dataUrl ?? null;
     return this._image;
   }
