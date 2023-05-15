@@ -1,5 +1,6 @@
 import { getShapeBoundingBox } from "../utils";
 import { IPoint } from "../types";
+import { isPolygonsIntersect } from "../utils/polyon-intersection";
 
 export class Shape {
   private readonly _points: IPoint[] = [];
@@ -8,6 +9,19 @@ export class Shape {
 
   public get points() {
     return this._points;
+  }
+
+  public isIntersectsWith(otherShape: Shape) {
+    return isPolygonsIntersect({ points: otherShape._points }, { points: this._points });
+  }
+  public isIntersectsWithMany(otherShapes: Shape[]) {
+    for (const otherShape of otherShapes) {
+      const intersects = this.isIntersectsWith(otherShape);
+      if (intersects) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public pushPoint(point: IPoint) {

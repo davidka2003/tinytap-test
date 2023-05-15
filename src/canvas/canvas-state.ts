@@ -1,4 +1,5 @@
-import { IPoint } from "../types";
+import { IPoint, IPolygon } from "../types";
+import { isPolygonIntersectsBulk, isPolygonsIntersect } from "../utils/polyon-intersection";
 import { Shape } from "./shape";
 
 export interface ICanvasState {
@@ -49,14 +50,20 @@ export class CanvasState {
   }
 
   private _renderState(state: ICanvasState) {
+    if (!state.points.length) {
+      return;
+    }
+
     this.canvasContext.beginPath();
     state.points.forEach((point, index) => {
       if (index === 0) {
         this.canvasContext.moveTo(point.x, point.y);
       }
-      state.points.push(point);
       this._renderPoint(point);
     });
+
+    this._renderPoint(state.points[0]);
+
     this.canvasContext.closePath();
     this._renderEmptyArea();
   }
@@ -84,6 +91,15 @@ export class CanvasState {
     this._drawShape(currentState.points);
     this.canvasContext.closePath();
     this._renderEmptyArea();
+    //check for intersections with other shapes, if so, delete current state
+    const currentShape = this._shapes.at(-1);
+    if (!currentShape) {
+      throw "No Shape";
+    }
+    if (currentShape.isIntersectsWithMany(this._shapes.slice(0, -1))) {
+      this.deleteStage(this._state.length - 1);
+    }
+
     this._state.push({
       points: [],
     });
