@@ -13,10 +13,19 @@ export const isPolygonIntersectsBulk = (aPolyongs: IPolygon[], b: IPolygon): boo
   return false;
 };
 export const isPolygonsIntersect = (polygonA: IPolygon, polygonB: IPolygon): boolean => {
-  // Check if any of the vertices of polygonA are outside polygonB
+  // Check if A within B
   for (let i = 0; i < polygonA.points.length; i++) {
     const point = polygonA.points[i];
     if (!isPointInsidePolygon(point, polygonB)) {
+      break;
+    } else {
+      return true;
+    }
+  }
+  //Check if B within A
+  for (let i = 0; i < polygonB.points.length; i++) {
+    const point = polygonB.points[i];
+    if (!isPointInsidePolygon(point, polygonA)) {
       break;
     } else {
       return true;
