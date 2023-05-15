@@ -29,9 +29,15 @@ export class CanvasState {
 
   private _drawShape(points: IPoint[]) {
     const { canvas } = this.canvasContext;
-    const shape = new Shape();
-    points.forEach((point) => shape.pushPoint(point));
-    shape.retrieveImage(this.image, canvas.width, canvas.height);
+    const shape = Shape.create({
+      canvasRect: canvas.getBoundingClientRect(),
+      initialImage: {
+        height: canvas.height,
+        width: canvas.width,
+        image: this.image,
+      },
+      points,
+    });
     this._shapes.push(shape);
   }
 
@@ -96,6 +102,7 @@ export class CanvasState {
     if (!currentShape) {
       throw "No Shape";
     }
+
     if (currentShape.isIntersectsWithMany(this._shapes.slice(0, -1))) {
       this.deleteStage(this._state.length - 1);
     }
@@ -119,6 +126,7 @@ export class CanvasState {
   }
 
   public get shapes() {
+    console.log(this._shapes);
     return this._shapes;
   }
 }

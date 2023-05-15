@@ -1,14 +1,38 @@
-import { getShapeBoundingBox } from "../utils";
-import { IPoint } from "../types";
+import { complexPolygonToRectPolygon, getPolygonBoundingBox } from "../utils";
+import { IPoint, IPolygon } from "../types";
 import { isPolygonsIntersect } from "../utils/polyon-intersection";
 
 export class Shape {
+  public get id() {
+    return this._points.reduce<number>((acc, point) => point.x + point.y + acc, 0);
+  }
   private readonly _points: IPoint[] = [];
   private _image: string | null = null;
-  constructor() {}
 
-  public get points() {
-    return this._points;
+  private _coordinates = { x: 0, y: 0 };
+  private _dimensions = { width: 0, height: 0 };
+  private constructor() {}
+
+  public get polygon(): IPolygon {
+    return { points: this._points };
+  }
+
+  public getRelatieToScreenTopLeftCoordinate(canvasRect: DOMRect) {
+    const bb = getPolygonBoundingBox(this._points);
+
+    return {
+      x: canvasRect.x + bb.sx,
+      y: canvasRect.y + bb.sy,
+    };
+  }
+  public getRelativeToScreenShapePolygon(canvasRect: DOMRect): IPolygon {
+    return {
+      points: this._points.map((point) => ({
+        x: point.x + canvasRect.left + window.scrollX,
+        //probably need to remove because of sticky
+        y: point.y + canvasRect.top + window.scrollY,
+      })),
+    };
   }
 
   public isIntersectsWith(otherShape: Shape) {
@@ -24,7 +48,28 @@ export class Shape {
     return false;
   }
 
-  public pushPoint(point: IPoint) {
+  static create({
+    points,
+    canvasRect,
+    initialImage,
+  }: {
+    points: IPoint[];
+    canvasRect: DOMRect;
+    initialImage: {
+      image: HTMLImageElement;
+      width: number;
+      height: number;
+    };
+  }) {
+    const shape = new Shape();
+    points.forEach((point) => shape.pushPoint(point));
+    shape.retrieveImage(initialImage.image, initialImage.width, initialImage.height);
+    shape._coordinates = { ...shape.getShapeBoundingBoxCoordinatesRelativeToScreen(canvasRect) };
+    shape._dimensions = shape.getDimensions();
+    return shape;
+  }
+
+  private pushPoint(point: IPoint) {
     this._points.push(point);
   }
 
@@ -32,7 +77,28 @@ export class Shape {
     return this._image;
   }
 
-  public retrieveImage(initialImage: HTMLImageElement, initialWidth: number, initialHeight: number) {
+  public get coordinates() {
+    return this._coordinates;
+  }
+
+  public get dimensions() {
+    return this._dimensions;
+  }
+
+  private getShapeBoundingBoxCoordinatesRelativeToScreen(canvasRect: DOMRect) {
+    const { sx, sy, width, height } = getPolygonBoundingBox(this._points);
+    return {
+      x: sx + canvasRect.left + window.scrollX,
+      //removed because of position sticky
+      y: sy + canvasRect.top, //+ window.scrollY,
+    };
+  }
+
+  private getDimensions() {
+    const { width, height } = getPolygonBoundingBox(this._points);
+    return { width, height };
+  }
+  private retrieveImage(initialImage: HTMLImageElement, initialWidth: number, initialHeight: number) {
     if (this._points.length < 3) {
       return null;
     }
@@ -52,7 +118,7 @@ export class Shape {
 
     ctx.drawImage(initialImage, 0, 0, canvas.width, canvas.height);
 
-    const { sx, sy, width, height } = getShapeBoundingBox(this._points);
+    const { sx, sy, width, height } = getPolygonBoundingBox(this._points);
     const imageData = ctx.getImageData(sx, sy, width, height);
 
     const clippedCanvas = document.createElement("canvas");

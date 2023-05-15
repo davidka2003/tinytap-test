@@ -2,32 +2,37 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import logo from "./logo.svg";
 import "./App.css";
 import styled from "styled-components";
-import { getShapeBoundingBox } from "./utils";
+import { getPolygonBoundingBox } from "./utils";
 import { Shape } from "./canvas/shape";
 import { CanvasState } from "./canvas/canvas-state";
+import { PuzzleCard } from "./components";
 
 const StyledApp = styled.div`
   height: 100%;
   width: 100%;
   display: flex;
+  position: relative;
 `;
 
 const StyledSideBar = styled.div`
   width: 300px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 16px;
 `;
 
 const StyledCanvas = styled.canvas`
+  top: 0;
+  position: sticky;
   flex: 1 1 0;
   height: 100%;
 `;
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
   const canvasState = useRef<CanvasState | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [shapes, setShapes] = useState<Shape[]>([]);
   const getShapes = () => {
     return canvasState.current?.shapes ?? [];
@@ -86,22 +91,28 @@ function App() {
   return (
     <StyledApp>
       <StyledSideBar>
-        {shapes.map(
-          (shape, index) =>
-            shape.image && (
-              <div
-                key={index}
-                onClick={() => {
-                  canvasState.current?.deleteStage(index);
-                  const shapes = getShapes();
-                  console.log(shapes);
-                  setShapes([...shapes]);
-                }}
-              >
-                <img src={shape.image} alt="" />
-              </div>
-            )
-        )}
+        <>
+          {shapes.map(
+            (shape, index) =>
+              shape.image && (
+                <PuzzleCard
+                  canvasRect={canvasRef.current!.getBoundingClientRect()}
+                  shape={shape}
+                  initialHeight={shape.dimensions.height}
+                  initialWidth={shape.dimensions.width}
+                  deletePuzzle={() => {
+                    canvasState.current?.deleteStage(index);
+                    const shapes = getShapes();
+                    setShapes([...shapes]);
+                  }}
+                  image={shape.image}
+                  key={shape.id}
+                  initialX={shape.coordinates.x}
+                  initialY={shape.coordinates.y}
+                />
+              )
+          )}
+        </>
       </StyledSideBar>
       <StyledCanvas
         width={1280}
@@ -116,35 +127,3 @@ function App() {
 }
 
 export default App;
-
-function createCropPath(points: { x: number; y: number }[]) {
-  const path = new Path2D();
-  path.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) {
-    path.lineTo(points[i].x, points[i].y);
-  }
-  path.closePath();
-  return path;
-}
-
-const getBoundingImageBox = (coords: { x: number; y: number }[]) => {
-  let [minX, minY] = [Infinity, Infinity];
-  let [maxX, maxY] = [0, 0];
-  for (let index = 0; index < coords.length; index++) {
-    const point = coords[index];
-    minX = point.x <= minX ? point.x : minX;
-    minY = point.y <= minY ? point.y : minY;
-
-    maxX = point.x >= maxX ? point.x : maxX;
-    maxY = point.y >= maxY ? point.y : maxY;
-  }
-
-  return {
-    width: maxX - minX,
-    heiht: maxY - minY,
-    maxX,
-    maxY,
-    minX,
-    minY,
-  };
-};
