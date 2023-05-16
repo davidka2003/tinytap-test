@@ -1,17 +1,9 @@
-import { IPoint, IPolygon } from "../types";
-import { isPolygonIntersectsBulk, isPolygonsIntersect } from "../utils/polyon-intersection";
+import { IPoint } from "../types";
+import { Polygon } from "../utils";
 import { Shape } from "./shape";
 
-export interface ICanvasState {
-  points: IPoint[];
-}
-
 export class CanvasState {
-  private readonly _state: ICanvasState[] = [
-    {
-      points: [],
-    },
-  ];
+  private _currentPolygon: Polygon = new Polygon();
   private readonly _shapes: Shape[] = [];
   constructor(private readonly canvasContext: CanvasRenderingContext2D, private readonly image: HTMLImageElement) {
     // this.nextState();
@@ -27,7 +19,7 @@ export class CanvasState {
     this.canvasContext.drawImage(image, 0, 0, canvas.width, canvas.height);
   }
 
-  private _drawShape(points: IPoint[]) {
+  private _createShape(polygon: Polygon): Shape {
     const { canvas } = this.canvasContext;
     const shape = Shape.create({
       canvasRect: canvas.getBoundingClientRect(),
@@ -36,45 +28,46 @@ export class CanvasState {
         width: canvas.width,
         image: this.image,
       },
-      points,
+      polygon,
     });
+
     this._shapes.push(shape);
+    return shape;
   }
 
   public pushPointToState(point: IPoint) {
-    const currentState = this._state.at(-1);
-    if (!currentState) {
-      return;
-    }
-    if (!currentState.points.length) {
+    if (!this._currentPolygon.points.length) {
       this.canvasContext.beginPath();
       this.canvasContext.moveTo(point.x, point.y);
     }
-
-    currentState.points.push(point);
+    this._currentPolygon.push(point);
     this._renderPoint(point);
   }
 
-  private _renderState(state: ICanvasState) {
-    if (!state.points.length) {
+  private _reRenderShape(shape: Shape) {
+    if (!shape.polygon.points.length) {
       return;
     }
 
     this.canvasContext.beginPath();
-    state.points.forEach((point, index) => {
+    shape.polygon.points.forEach((point, index) => {
       if (index === 0) {
         this.canvasContext.moveTo(point.x, point.y);
       }
       this._renderPoint(point);
     });
 
-    this._renderPoint(state.points[0]);
-
     this.canvasContext.closePath();
     this._renderEmptyArea();
   }
 
   private _renderPoint(point: IPoint) {
+    this.canvasContext.lineTo(point.x, point.y);
+    this.canvasContext.stroke();
+  }
+
+  private _renderNewPoint(point: IPoint) {
+    this._currentPolygon.push(point);
     this.canvasContext.lineTo(point.x, point.y);
     this.canvasContext.stroke();
   }
@@ -88,45 +81,39 @@ export class CanvasState {
   }
 
   public nextState() {
-    const currentState = this._state.at(-1);
-    if (!currentState) {
+    if (this._currentPolygon.points.length < 4) {
+      this._currentPolygon = new Polygon();
       return;
     }
-
-    this._renderPoint(currentState.points[0]);
-    this._drawShape(currentState.points);
+    //close polygon
+    this._renderNewPoint(this._currentPolygon.points[0]);
     this.canvasContext.closePath();
     this._renderEmptyArea();
+    //create shape from current state points
+    const currentShape = this._createShape(this._currentPolygon);
+
     //check for intersections with other shapes, if so, delete current state
-    const currentShape = this._shapes.at(-1);
-    if (!currentShape) {
-      throw "No Shape";
-    }
-
     if (currentShape.isIntersectsWithMany(this._shapes.slice(0, -1))) {
-      this.deleteStage(this._state.length - 1);
+      this.deleteStage(this._shapes.length - 1);
     }
-
-    this._state.push({
-      points: [],
-    });
+    //reset currentState
+    this._currentPolygon = new Polygon();
+    //start new path e.g for 1st point in the next state
     this.canvasContext.beginPath();
   }
 
   public deleteStage(stageIndex: number) {
-    this._state.splice(stageIndex, 1);
     this._shapes.splice(stageIndex, 1);
-    this.render();
+    this.reRender();
   }
 
-  public render() {
+  public reRender() {
     this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
     this._attachImage(this.image);
-    this._state.forEach((state) => this._renderState(state));
+    this.shapes.forEach((shape) => this._reRenderShape(shape));
   }
 
   public get shapes() {
-    console.log(this._shapes);
     return this._shapes;
   }
 }

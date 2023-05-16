@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import logo from "./logo.svg";
 import "./App.css";
 import styled from "styled-components";
-import { getPolygonBoundingBox } from "./utils";
 import { Shape } from "./canvas/shape";
 import { CanvasState } from "./canvas/canvas-state";
 import { PuzzleCard } from "./components";
@@ -107,8 +105,8 @@ function App() {
                   }}
                   image={shape.image}
                   key={shape.id}
-                  initialX={shape.coordinates.x}
-                  initialY={shape.coordinates.y}
+                  initialX={shape.screenCoordinates.x}
+                  initialY={shape.screenCoordinates.y}
                 />
               )
           )}

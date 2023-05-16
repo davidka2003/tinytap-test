@@ -3,8 +3,7 @@ import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState 
 import { styled } from "styled-components";
 import { cardFlyOut } from "../../animations";
 import { Shape } from "../../canvas/shape";
-import { isAlmostIntersected } from "../../utils/polyon-intersection";
-import { complexPolygonToRectPolygon, domRectToPolygon, getPolygonBoundingBox } from "../../utils";
+import { Polygon } from "../../utils";
 
 export interface PuzzleCardProps {
   initialX: number;
@@ -33,6 +32,7 @@ const StyledCard = styled(motion.div)<{ width?: number; height?: number }>`
     width: 100%;
     height: 100%;
     user-select: none;
+    object-position: left top;
   }
 `;
 
@@ -42,7 +42,7 @@ export const PuzzleCard: FC<PuzzleCardProps> = (props) => {
   const [initialCoords, setInitialCoords] = useState<{ left: number; top: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const puzzleRef = useRef<HTMLDivElement>(null);
+  const puzzleRef = useRef<HTMLImageElement>(null);
   useLayoutEffect(() => {
     if (!cardRef.current) {
       throw "provide ref";
@@ -79,24 +79,10 @@ export const PuzzleCard: FC<PuzzleCardProps> = (props) => {
       return;
     }
     setIsDragging(false);
-    //?
-    const relativeCanvasPolygon = props.shape.getRelativeToScreenShapePolygon(props.canvasRect);
     const puzzleRect = puzzleRef.current.getBoundingClientRect();
-    console.log(complexPolygonToRectPolygon(relativeCanvasPolygon));
-    console.log(domRectToPolygon(puzzleRect));
-    const isPuzzleOnPlace = isAlmostIntersected(
-      domRectToPolygon(puzzleRect),
-      complexPolygonToRectPolygon(relativeCanvasPolygon)
-    );
-    if (isPuzzleOnPlace) {
+    if (props.shape.isInPlace(Polygon.createFromDomRect(puzzleRect), props.canvasRect)) {
       props.deletePuzzle();
     }
-
-    // const relativeCanvasPolygon = props.shape.getRelativeToScreenShapePolygon(props.canvasRect);
-    // const puzzleRect = puzzleRef.current.getBoundingClientRect();
-    // console.log(domRectToPolygon(puzzleRect));
-    // console.log(complexPolygonToRectPolygon(relativeCanvasPolygon));
-    // console.log(isAlmostIntersected(domRectToPolygon(puzzleRect), complexPolygonToRectPolygon(relativeCanvasPolygon)));
   };
 
   return (
@@ -121,7 +107,7 @@ export const PuzzleCard: FC<PuzzleCardProps> = (props) => {
             initial={"initial"}
             animate={"animate"}
           >
-            <img draggable={false} src={props.image} alt="" />
+            <img ref={puzzleRef} style={{ outline: "solid 1px red" }} draggable={false} src={props.image} alt="" />
           </StyledCard>
         </DraggableWrapper>
       )}
