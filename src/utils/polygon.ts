@@ -2,7 +2,7 @@ import { IPoint, IPolygon } from "../types";
 import * as turf from "@turf/turf";
 
 export class Polygon implements IPolygon {
-  constructor(public readonly points: IPoint[] = []) {}
+  constructor(public readonly points: IPoint[] = []) { }
 
   public push(point: IPoint) {
     this.points.push(point);
@@ -14,27 +14,28 @@ export class Polygon implements IPolygon {
    * @returns Bounding box Polygon
    */
   static createFromDomRect(domRect: DOMRect) {
+    const { x, y, width, height } = domRect
     const points = [
       {
-        x: domRect.x + window.scrollX,
-        y: domRect.y + window.scrollY,
+        x: x + window.scrollX,
+        y: y + window.scrollY,
       },
       {
-        x: domRect.x + domRect.width + window.scrollX,
-        y: domRect.y + window.scrollY,
+        x: x + width + window.scrollX,
+        y: y + window.scrollY,
       },
       {
-        x: domRect.x + domRect.width + window.scrollX,
-        y: domRect.y + domRect.height + window.scrollY,
+        x: x + width + window.scrollX,
+        y: y + height + window.scrollY,
       },
       {
-        x: domRect.x + window.scrollX,
-        y: domRect.y + domRect.height + window.scrollY,
+        x: x + window.scrollX,
+        y: y + height + window.scrollY,
       },
       //close polygon
       {
-        x: domRect.x + window.scrollX,
-        y: domRect.y + window.scrollY,
+        x: x + window.scrollX,
+        y: y + window.scrollY,
       },
     ];
     return new Polygon(points);
@@ -65,6 +66,15 @@ export class Polygon implements IPolygon {
     };
   }
 
+  public getDistanceToCoordinate(pointB: IPoint): number {
+    const pointA = this.getCoordinates()
+    const deltaX = pointB.x - pointA.x;
+    const deltaY = pointB.y - pointA.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    console.log({ distance })
+    return distance
+  }
+
   /**
    *
    * @param otherPolygon
@@ -75,6 +85,7 @@ export class Polygon implements IPolygon {
     const turfPolygonB = Polygon.convertToTurfPolygon(otherPolygon);
     const intersection = turf.intersect(turfPolygonB, turfPolygonA);
     if (!intersection) {
+      console.log("No intersection")
       return 0;
     }
     const intersectionRate = turf.area(intersection) / turf.area(turfPolygonA);
@@ -101,7 +112,8 @@ export class Polygon implements IPolygon {
   }
 
   static convertToTurfPolygon(polygon: Polygon) {
-    const points = polygon.points.map((point) => [point.x, point.y]);
+    //there were too big numbers, thats why need to divide by 1000
+    const points = polygon.points.map((point) => [point.x / 1000, point.y / 1000]);
 
     return turf.polygon([points]);
   }

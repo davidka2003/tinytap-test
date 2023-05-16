@@ -1,41 +1,29 @@
-import { createContext, Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
+import { createContext, Dispatch, FC, SetStateAction, useEffect, useRef, useState } from "react";
 import { CanvasState } from "../../canvas/canvas-state";
+import { Puzzle } from "../../canvas/puzzle";
 
 type UseStateT<T> = [T, Dispatch<SetStateAction<T>>];
 
 export interface IPuzzleContext {
-  currentCanvasState: React.RefObject<CanvasState | null>;
+  currentCanvasState: React.MutableRefObject<CanvasState | null>;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   currentImageState: UseStateT<HTMLImageElement | null>;
-  imagesState: UseStateT<string[]>;
+  isDrawingState: UseStateT<boolean>;
+  imagesState: UseStateT<{ image: HTMLImageElement, id: string }[]>;
+  puzzleState: UseStateT<Puzzle[]>;
+  debugState: UseStateT<boolean>
 }
 //@ts-expect-error
 export const PuzzleContext = createContext<IPuzzleContext>({});
 
-export const PuzzleContextProvider = () => {
-  const [images, setImages] = useState<string[]>([]);
+export const PuzzleContextProvider: FC<{ children: React.ReactNode, debug?: boolean }> = ({ children, debug: initialDebug = false }) => {
+  const [images, setImages] = useState<{ image: HTMLImageElement, id: string }[]>([]);
   const [currentImage, setCurrentImage] = useState<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasStateRef = useRef<CanvasState | null>(null);
-
-  useEffect(() => {
-    if (!currentImage) {
-      return;
-    }
-
-    if (!canvasRef.current) {
-      throw "Connect canvasRef to canvas";
-    }
-    const ctx = canvasRef.current.getContext("2d");
-    const image = new Image();
-    image.onload = () => {
-      const _canvasState = new CanvasState(ctx!, image);
-      canvasStateRef.current = _canvasState;
-    };
-    image.crossOrigin = "anonymous";
-    image.src = "/image.jpg";
-  }, [currentImage]);
-
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [puzzles, setPuzzles] = useState<Puzzle[]>([])
+  const [debug, setDebug] = useState(initialDebug)
   return (
     <PuzzleContext.Provider
       value={{
@@ -43,7 +31,10 @@ export const PuzzleContextProvider = () => {
         currentCanvasState: canvasStateRef,
         currentImageState: [currentImage, setCurrentImage],
         imagesState: [images, setImages],
+        isDrawingState: [isDrawing, setIsDrawing],
+        puzzleState: [puzzles, setPuzzles],
+        debugState: [debug, setDebug]
       }}
-    ></PuzzleContext.Provider>
+    >{children}</PuzzleContext.Provider>
   );
 };

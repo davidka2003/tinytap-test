@@ -15,6 +15,9 @@ export const cardFlyOut = (intialPosition: {
       width: intialPosition.initialWidth,
       height: intialPosition.initialHeight,
       scale: 1.2,
+      transition: {
+        duration: 0.3
+      }
     },
     animate: {
       translateX: 0,
@@ -22,6 +25,9 @@ export const cardFlyOut = (intialPosition: {
       width: intialPosition.width,
       height: intialPosition.height,
       scale: 1,
+      transition: {
+        duration: 0.3
+      }
     },
   };
 };

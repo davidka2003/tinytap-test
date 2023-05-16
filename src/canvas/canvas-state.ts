@@ -1,16 +1,17 @@
 import { IPoint } from "../types";
 import { Polygon } from "../utils";
-import { Shape } from "./shape";
+import { Puzzle } from "./puzzle";
 
 export class CanvasState {
   private _currentPolygon: Polygon = new Polygon();
-  private readonly _shapes: Shape[] = [];
+  private _puzzles: Puzzle[] = [];
   constructor(private readonly canvasContext: CanvasRenderingContext2D, private readonly image: HTMLImageElement) {
     // this.nextState();
     this._attachImage(image);
-    canvasContext.fillStyle = "gray";
-    canvasContext.strokeStyle = "green";
-    canvasContext.lineWidth = 5;
+    canvasContext.fillStyle = "#F5F5F5";
+    canvasContext.strokeStyle = "black";
+    canvasContext.setLineDash([5, 3])
+    canvasContext.lineWidth = 3;
   }
 
   private _attachImage(image: HTMLImageElement) {
@@ -19,9 +20,9 @@ export class CanvasState {
     this.canvasContext.drawImage(image, 0, 0, canvas.width, canvas.height);
   }
 
-  private _createShape(polygon: Polygon): Shape {
+  private _createShape(polygon: Polygon): Puzzle {
     const { canvas } = this.canvasContext;
-    const shape = Shape.create({
+    const shape = Puzzle.create({
       canvasRect: canvas.getBoundingClientRect(),
       initialImage: {
         height: canvas.height,
@@ -31,7 +32,7 @@ export class CanvasState {
       polygon,
     });
 
-    this._shapes.push(shape);
+    this._puzzles.push(shape);
     return shape;
   }
 
@@ -44,7 +45,7 @@ export class CanvasState {
     this._renderPoint(point);
   }
 
-  private _reRenderShape(shape: Shape) {
+  private _reRenderShape(shape: Puzzle) {
     if (!shape.polygon.points.length) {
       return;
     }
@@ -93,8 +94,8 @@ export class CanvasState {
     const currentShape = this._createShape(this._currentPolygon);
 
     //check for intersections with other shapes, if so, delete current state
-    if (currentShape.isIntersectsWithMany(this._shapes.slice(0, -1))) {
-      this.deleteStage(this._shapes.length - 1);
+    if (currentShape.isIntersectsWithMany(this._puzzles.slice(0, -1))) {
+      this.deleteStage(this._puzzles.length - 1);
     }
     //reset currentState
     this._currentPolygon = new Polygon();
@@ -103,17 +104,22 @@ export class CanvasState {
   }
 
   public deleteStage(stageIndex: number) {
-    this._shapes.splice(stageIndex, 1);
+    this._puzzles.splice(stageIndex, 1);
     this.reRender();
   }
 
   public reRender() {
     this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
     this._attachImage(this.image);
-    this.shapes.forEach((shape) => this._reRenderShape(shape));
+    this.puzzles.forEach((shape) => this._reRenderShape(shape));
   }
 
-  public get shapes() {
-    return this._shapes;
+  public clearState() {
+    this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
+    this._puzzles = []
+  }
+
+  public get puzzles() {
+    return this._puzzles;
   }
 }

@@ -1,125 +1,101 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import styled from "styled-components";
-import { Shape } from "./canvas/shape";
+import { Puzzle } from "./canvas/puzzle";
 import { CanvasState } from "./canvas/canvas-state";
 import { PuzzleCard } from "./components";
+import { ImageUploader } from "./components/image-uploader";
+import { usePuzzleState } from "./context/puzzle/hooks";
 
 const StyledApp = styled.div`
-  height: 100%;
-  width: 100%;
+  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   display: flex;
   position: relative;
+  overflow-x: hidden; 
+  background-color:#F5F5F5;
 `;
 
 const StyledSideBar = styled.div`
+  padding:12px;
   width: 300px;
+  max-height:100%;
+  overflow-y: auto;
+  flex-shrink:0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
+  border-right: solid 1px #404040;
 `;
 
-const StyledCanvas = styled.canvas`
+const StyledMain = styled.main`
+  flex: 1 1 0;
   top: 0;
   position: sticky;
-  flex: 1 1 0;
-  height: 100%;
+  height:100%;
+  display: flex;
+  flex-direction:column;
+  overflow-x: hidden;
+  gap:16px;
+`
+
+const StyledCanvas = styled.canvas`
+  /* top: 0;
+  position: sticky; */
+  /* flex: 1 1 0;
+  height: 100%; */
 `;
+const StyledPlaceHolder = styled.div`
+  min-height:600px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex:1;
+`
 
 function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const canvasState = useRef<CanvasState | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [shapes, setShapes] = useState<Shape[]>([]);
-  const getShapes = () => {
-    return canvasState.current?.shapes ?? [];
-  };
-
-  useEffect(() => {
-    if (!canvasRef.current) {
-      return;
-    }
-    const ctx = canvasRef.current.getContext("2d");
-    const image = new Image();
-    image.onload = () => {
-      const _canvasState = new CanvasState(ctx!, image);
-      canvasState.current = _canvasState;
-    };
-    image.crossOrigin = "anonymous";
-    image.src = "/image.jpg";
-  }, []);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    if (!canvasState.current) {
-      return;
-    }
-
-    canvasState.current.pushPointToState({
-      x: e.nativeEvent.offsetX,
-      y: e.nativeEvent.offsetY,
-    });
-    setIsDrawing(true);
-  };
-
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    if (!canvasState.current) {
-      return;
-    }
-    canvasState.current.pushPointToState({
-      x: e.nativeEvent.offsetX,
-      y: e.nativeEvent.offsetY,
-    });
-    canvasState.current.nextState();
-    setShapes([...getShapes()]);
-    setIsDrawing(false);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    if (!isDrawing) return;
-    if (!canvasState.current) {
-      return;
-    }
-    canvasState.current.pushPointToState({
-      x: e.nativeEvent.offsetX,
-      y: e.nativeEvent.offsetY,
-    });
-  };
+  const { canvasRef, images, currentImage, deletePuzzle, currentCanvasState, puzzles, handleMouseDown, handleMouseMove, handleMouseUp } = usePuzzleState()
 
   return (
     <StyledApp>
       <StyledSideBar>
+        <p>Your Puzzles</p>
         <>
-          {shapes.map(
-            (shape, index) =>
-              shape.image && (
+          {puzzles.map(
+            (puzzle, index) =>
+              puzzle.image && (
                 <PuzzleCard
                   canvasRect={canvasRef.current!.getBoundingClientRect()}
-                  shape={shape}
-                  initialHeight={shape.dimensions.height}
-                  initialWidth={shape.dimensions.width}
+                  shape={puzzle}
+                  initialHeight={puzzle.dimensions.height}
+                  initialWidth={puzzle.dimensions.width}
                   deletePuzzle={() => {
-                    canvasState.current?.deleteStage(index);
-                    const shapes = getShapes();
-                    setShapes([...shapes]);
+                    deletePuzzle(index)
                   }}
-                  image={shape.image}
-                  key={shape.id}
-                  initialX={shape.screenCoordinates.x}
-                  initialY={shape.screenCoordinates.y}
+                  image={puzzle.image}
+                  key={puzzle.id}
+                  initialX={puzzle.screenCoordinates.x}
+                  initialY={puzzle.screenCoordinates.y}
                 />
               )
           )}
         </>
       </StyledSideBar>
-      <StyledCanvas
-        width={1280}
-        height={720}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        ref={canvasRef}
-      ></StyledCanvas>
+      <StyledMain>
+        {images.length > 0 ? <StyledCanvas
+          width={1280}
+          height={600}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          ref={canvasRef}
+        ></StyledCanvas> : <StyledPlaceHolder>
+          <h1>Upload and pick an image to start game</h1>
+        </StyledPlaceHolder>}
+        <ImageUploader />
+      </StyledMain>
     </StyledApp>
   );
 }

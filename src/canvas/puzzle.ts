@@ -1,12 +1,12 @@
 import { Polygon } from "../utils";
 
-export class Shape {
+export class Puzzle {
   public id = crypto.randomUUID();
 
   private _image: string | null = null;
 
   private _screenCoordinates = { x: 0, y: 0 };
-  private constructor(private readonly _polygon: Polygon = new Polygon()) {}
+  private constructor(private readonly _polygon: Polygon = new Polygon()) { }
 
   public get polygon(): Polygon {
     return this._polygon;
@@ -33,14 +33,16 @@ export class Shape {
   public isInPlace(currentPolygonBb: Polygon, canvasRect: DOMRect): boolean {
     //absolute coordinates within correct polygon
     const correctPlacePolygonBb = this.getRelativeToScreenShapePolygon(canvasRect).bb();
+    const intersectionRate = correctPlacePolygonBb.getIntersectionRate(currentPolygonBb)
+    const distanceToClosestCoord = correctPlacePolygonBb.getDistanceToCoordinate(currentPolygonBb.getCoordinates())
+    return intersectionRate >= 0.85 || distanceToClosestCoord < 20
 
-    return currentPolygonBb.getIntersectionRate(correctPlacePolygonBb) >= 0.85;
   }
 
-  public isIntersectsWith(otherShape: Shape) {
+  public isIntersectsWith(otherShape: Puzzle) {
     return this._polygon.isIntersectsWithOtherPolygon(otherShape.polygon);
   }
-  public isIntersectsWithMany(otherShapes: Shape[]) {
+  public isIntersectsWithMany(otherShapes: Puzzle[]) {
     return this._polygon.isIntersectsWithOtherPolygons(otherShapes.map((shape) => shape.polygon));
   }
 
@@ -57,10 +59,10 @@ export class Shape {
       height: number;
     };
   }) {
-    const shape = new Shape(polygon);
-    shape.retrieveImage(initialImage.image, initialImage.width, initialImage.height);
-    shape._screenCoordinates = { ...shape.getShapeBoundingBoxCoordinatesRelativeToScreen(canvasRect) };
-    return shape;
+    const puzzle = new Puzzle(polygon);
+    puzzle.retrieveImage(initialImage.image, initialImage.width, initialImage.height);
+    puzzle._screenCoordinates = { ...puzzle.getShapeBoundingBoxCoordinatesRelativeToScreen(canvasRect) };
+    return puzzle;
   }
 
   public get image() {
@@ -80,7 +82,7 @@ export class Shape {
     return {
       x: bbCoords.x + canvasRect.left + window.scrollX,
       //removed because of position sticky
-      y: bbCoords.y + canvasRect.top, //+ window.scrollY,
+      y: bbCoords.y + canvasRect.top + window.scrollY,
     };
   }
   private retrieveImage(initialImage: HTMLImageElement, initialWidth: number, initialHeight: number) {
