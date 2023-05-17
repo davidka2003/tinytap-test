@@ -19,8 +19,7 @@ const StyledApp = styled.div`
 const StyledSideBar = styled.div`
   padding:12px;
   width: 300px;
-  max-height:100%;
-  overflow-y: auto;
+  height: fit-content;
   flex-shrink:0;
   display: flex;
   flex-direction: column;
@@ -31,8 +30,8 @@ const StyledSideBar = styled.div`
 
 const StyledMain = styled.main`
   flex: 1 1 0;
-  /* top: 0;
-  position: sticky; */
+  top: 0;
+  position: sticky;
   height:100%;
   display: flex;
   flex-direction:column;
