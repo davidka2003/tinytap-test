@@ -19,6 +19,7 @@ const StyledApp = styled.div`
 const StyledSideBar = styled.div`
   padding:12px;
   width: 300px;
+  min-height:100%;
   height: fit-content;
   flex-shrink:0;
   display: flex;
