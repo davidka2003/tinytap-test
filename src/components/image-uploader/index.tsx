@@ -14,7 +14,9 @@ const StyledImageUploader = styled.div`
   align-items: center;
   /* gap: 16px; */
   overflow-x: auto;
+  min-height: 150px;
   flex-grow:1;
+  flex-shrink:0;
   &>*{
     /* instead of gap, for better animation */
     margin:  0 8px;
@@ -48,7 +50,7 @@ const UploadFileInput = styled(Button)`
 
 
 export const ImageUploader: FC<ImageUploaderProps> = () => {
-  const { canvasRef, currentCanvasState, images, uploadImage } = usePuzzleState()
+  const { images, uploadImage } = usePuzzleState()
 
   const fileUploadHandler = async (event: ChangeEvent<HTMLInputElement>) => {
     const images = event.target.files

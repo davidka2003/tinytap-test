@@ -9,7 +9,8 @@ const StyledImageContainer = styled(motion.div) <{ img: string }>`
     border-radius: 8px;
     border: solid 1px black;
     aspect-ratio: 4 / 3;
-    height:160px;
+    height:100%;
+    max-height:160px;
     background-image:url("${props => props.img}");
     background-position: center;
     background-repeat: no-repeat;

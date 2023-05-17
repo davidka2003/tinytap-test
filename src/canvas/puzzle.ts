@@ -20,19 +20,19 @@ export class Puzzle {
       y: canvasRect.y + bbCoords.y,
     };
   }
-  public getRelativeToScreenShapePolygon(canvasRect: DOMRect): Polygon {
+  public getRelativeToScreenShapePolygon(canvasRect: DOMRect, scale: { scaleX: number, scaleY: number }): Polygon {
     return new Polygon(
       this.polygon.points.map((point) => ({
-        x: point.x + canvasRect.left + window.scrollX,
+        x: point.x + canvasRect.left + window.scrollX + ((scale.scaleX - 1) * point.x),
         //probably need to remove because of sticky
-        y: point.y + canvasRect.top + window.scrollY,
+        y: point.y + canvasRect.top + window.scrollY + ((scale.scaleY - 1) * point.y),
       }))
-    );
+    ).scaleTopLeft(scale);
   }
   //only reasonable way is to check by bound boxes
-  public isInPlace(currentPolygonBb: Polygon, canvasRect: DOMRect): boolean {
+  public isInPlace(currentPolygonBb: Polygon, canvasRect: DOMRect, scale: { scaleX: number, scaleY: number }): boolean {
     //absolute coordinates within correct polygon
-    const correctPlacePolygonBb = this.getRelativeToScreenShapePolygon(canvasRect).bb();
+    const correctPlacePolygonBb = this.getRelativeToScreenShapePolygon(canvasRect, scale).bb();
     const intersectionRate = correctPlacePolygonBb.getIntersectionRate(currentPolygonBb)
     const distanceToClosestCoord = correctPlacePolygonBb.getDistanceToCoordinate(currentPolygonBb.getCoordinates())
     return intersectionRate >= 0.85 || distanceToClosestCoord < 20
@@ -81,7 +81,6 @@ export class Puzzle {
     const bbCoords = this._polygon.bb().getCoordinates();
     return {
       x: bbCoords.x + canvasRect.left + window.scrollX,
-      //removed because of position sticky
       y: bbCoords.y + canvasRect.top + window.scrollY,
     };
   }

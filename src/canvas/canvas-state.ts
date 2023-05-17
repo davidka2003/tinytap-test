@@ -5,7 +5,7 @@ import { Puzzle } from "./puzzle";
 export class CanvasState {
   private _currentPolygon: Polygon = new Polygon();
   private _puzzles: Puzzle[] = [];
-  constructor(private readonly canvasContext: CanvasRenderingContext2D, private readonly image: HTMLImageElement) {
+  constructor(private readonly canvasContext: CanvasRenderingContext2D, private readonly image: HTMLImageElement, private readonly inititalCanvasDimensions: { width: number, height: number }) {
     // this.nextState();
     this._attachImage(image);
     canvasContext.fillStyle = "#F5F5F5";
@@ -49,9 +49,13 @@ export class CanvasState {
     if (!shape.polygon.points.length) {
       return;
     }
-
+    const sx = this.canvasContext.canvas.getBoundingClientRect().width / this.inititalCanvasDimensions.width
+    const sy = this.canvasContext.canvas.getBoundingClientRect().height / this.inititalCanvasDimensions.height
     this.canvasContext.beginPath();
-    shape.polygon.points.forEach((point, index) => {
+    shape.polygon.points/* .map(point => ({
+      ////!!!!!!
+      x: point.x / sx, y: point.y / sy
+    })) */.forEach((point, index) => {
       if (index === 0) {
         this.canvasContext.moveTo(point.x, point.y);
       }
@@ -81,7 +85,7 @@ export class CanvasState {
     this.canvasContext.restore();
   }
 
-  public nextState() {
+  public nextState({ scaleX, scaleY }: { scaleX: number, scaleY: number }) {
     if (this._currentPolygon.points.length < 4) {
       this._currentPolygon = new Polygon();
       return;
@@ -91,7 +95,7 @@ export class CanvasState {
     this.canvasContext.closePath();
     this._renderEmptyArea();
     //create shape from current state points
-    const currentShape = this._createShape(this._currentPolygon);
+    const currentShape = this._createShape(this._currentPolygon/* .scaleTopLeft({ scaleX: scaleX, scaleY: scaleY }) */);
 
     //check for intersections with other shapes, if so, delete current state
     if (currentShape.isIntersectsWithMany(this._puzzles.slice(0, -1))) {

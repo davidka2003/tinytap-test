@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React from "react";
 import "./App.css";
 import styled from "styled-components";
-import { Puzzle } from "./canvas/puzzle";
-import { CanvasState } from "./canvas/canvas-state";
 import { PuzzleCard } from "./components";
 import { ImageUploader } from "./components/image-uploader";
 import { usePuzzleState } from "./context/puzzle/hooks";
+import { Canvas } from "./components/canvas";
 
 const StyledApp = styled.div`
   min-height: 100vh;
@@ -32,68 +31,61 @@ const StyledSideBar = styled.div`
 
 const StyledMain = styled.main`
   flex: 1 1 0;
-  top: 0;
-  position: sticky;
+  /* top: 0;
+  position: sticky; */
   height:100%;
   display: flex;
   flex-direction:column;
   overflow-x: hidden;
   gap:16px;
+  &>*{
+    flex-shrink:1;
+    flex-grow:0;
+  }
 `
 
-const StyledCanvas = styled.canvas`
-  /* top: 0;
-  position: sticky; */
-  /* flex: 1 1 0;
-  height: 100%; */
-`;
+
 const StyledPlaceHolder = styled.div`
-  min-height:600px;
   display:flex;
   justify-content:center;
   align-items:center;
-  flex:1;
+  flex:1 1 0;
 `
 
 function App() {
-  const { canvasRef, images, currentImage, deletePuzzle, currentCanvasState, puzzles, handleMouseDown, handleMouseMove, handleMouseUp } = usePuzzleState()
+  const { canvasRef, images, handleStartDraw, handleStopDraw, deletePuzzle, handleDraw, puzzles, scale } = usePuzzleState()
 
   return (
     <StyledApp>
       <StyledSideBar>
         <p>Your Puzzles</p>
-        <>
-          {puzzles.map(
-            (puzzle, index) =>
-              puzzle.image && (
-                <PuzzleCard
-                  canvasRect={canvasRef.current!.getBoundingClientRect()}
-                  shape={puzzle}
-                  initialHeight={puzzle.dimensions.height}
-                  initialWidth={puzzle.dimensions.width}
-                  deletePuzzle={() => {
-                    deletePuzzle(index)
-                  }}
-                  image={puzzle.image}
-                  key={puzzle.id}
-                  initialX={puzzle.screenCoordinates.x}
-                  initialY={puzzle.screenCoordinates.y}
-                />
-              )
-          )}
-        </>
+        {puzzles.map(
+          (puzzle, index) => (
+            puzzle.image ? <PuzzleCard
+              canvasRect={canvasRef.current!.getBoundingClientRect()}
+              puzzle={puzzle}
+              initialHeight={puzzle.dimensions.height * scale.scaleY/* e.g scaleX */}
+              initialWidth={puzzle.dimensions.width * scale.scaleX /* e.g scaleY */}
+              deletePuzzle={() => {
+                deletePuzzle(index)
+              }}
+              image={puzzle.image}
+              key={puzzle.id}
+              initialX={puzzle.screenCoordinates.x}
+              initialY={puzzle.screenCoordinates.y}
+            /> : null
+          )
+        )}
       </StyledSideBar>
       <StyledMain>
-        {images.length > 0 ? <StyledCanvas
-          width={1280}
-          height={600}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          ref={canvasRef}
-        ></StyledCanvas> : <StyledPlaceHolder>
-          <h1>Upload and pick an image to start game</h1>
-        </StyledPlaceHolder>}
+        {images.length > 0 ?
+          <Canvas onDraw={(_, sx, sy) => {
+            handleDraw(sx, sy)
+          }} onEnd={console.log} onStart={handleStartDraw} onStop={handleStopDraw} />
+          :
+          <StyledPlaceHolder>
+            <h1>Upload and pick an image to start game</h1>
+          </StyledPlaceHolder>}
         <ImageUploader />
       </StyledMain>
     </StyledApp>

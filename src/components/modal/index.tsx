@@ -6,7 +6,8 @@ import { Button } from '../button';
 
 export interface ModalProps {
     children?: ReactNode;
-    onCloseModal: () => void
+    onCloseModal?: () => void
+    defaultOpen?: boolean
     open?: boolean;
     style?: React.CSSProperties;
     className?: string;
@@ -61,16 +62,27 @@ const CloseButton = styled(Button)`
 `;
 export const Modal: FC<ModalProps> = ({
     children,
-    open = false,
+    open: controlledOpen = false,
     className,
     style,
-    onCloseModal
+    defaultOpen,
+    onCloseModal,
 }) => {
-    // const [open, setOpen] = useState(initialOpen);
+    const isControlled = typeof controlledOpen !== "undefined"
+    const hasDefaultValue = typeof defaultOpen !== "undefined"
+    const [internalOpen, setInternalOpen] = useState(hasDefaultValue ? defaultOpen : false);
 
-    // const closeModal = () => {
-    //     setOpen(false);
-    // };
+    const open = isControlled ? controlledOpen : internalOpen
+
+    const onClose = () => {
+        if (onCloseModal) {
+            return void onCloseModal()
+        }
+        if (!isControlled) {
+            return setInternalOpen(false)
+        }
+    }
+
     return (
         <Dialog.Root open={open}>
             <Dialog.Portal>
@@ -79,7 +91,7 @@ export const Modal: FC<ModalProps> = ({
                     <ContentWraper>
                         {children}
                         <Dialog.Close asChild>
-                            <CloseButton onClick={onCloseModal}>
+                            <CloseButton onClick={onClose}>
                                 <Cross2Icon />
                             </CloseButton>
                         </Dialog.Close>

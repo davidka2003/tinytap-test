@@ -12,6 +12,7 @@ export interface IPuzzleContext {
   imagesState: UseStateT<{ image: HTMLImageElement, id: string }[]>;
   puzzleState: UseStateT<Puzzle[]>;
   debugState: UseStateT<boolean>
+  canvasDimenionsState: UseStateT<{ width: number, height: number }>
 }
 //@ts-expect-error
 export const PuzzleContext = createContext<IPuzzleContext>({});
@@ -24,6 +25,7 @@ export const PuzzleContextProvider: FC<{ children: React.ReactNode, debug?: bool
   const [isDrawing, setIsDrawing] = useState(false)
   const [puzzles, setPuzzles] = useState<Puzzle[]>([])
   const [debug, setDebug] = useState(initialDebug)
+  const [canvasDimensions, setCanvasDimensions] = useState<{ width: number, height: number }>({ width: 1280, height: 600 })
   return (
     <PuzzleContext.Provider
       value={{
@@ -33,7 +35,8 @@ export const PuzzleContextProvider: FC<{ children: React.ReactNode, debug?: bool
         imagesState: [images, setImages],
         isDrawingState: [isDrawing, setIsDrawing],
         puzzleState: [puzzles, setPuzzles],
-        debugState: [debug, setDebug]
+        debugState: [debug, setDebug],
+        canvasDimenionsState: [canvasDimensions, setCanvasDimensions]
       }}
     >{children}</PuzzleContext.Provider>
   );

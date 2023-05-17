@@ -8,26 +8,29 @@ export const cardFlyOut = (intialPosition: {
   width: number;
   height: number;
 }): Variants => {
+  const { initialHeight, initialWidth, x, y, width, height } = { ...intialPosition }
   return {
     initial: {
-      translateX: intialPosition.x,
-      translateY: intialPosition.y,
-      width: intialPosition.initialWidth,
-      height: intialPosition.initialHeight,
+      translateX: x,
+      translateY: y,
+      width: initialWidth,
+      height: initialHeight,
       scale: 1.2,
       transition: {
-        duration: 0.3
+        scale: {
+          duration: 0.3
+        }
       }
     },
     animate: {
       translateX: 0,
       translateY: 0,
-      width: intialPosition.width,
-      height: intialPosition.height,
+      width: width,
+      height: height,
       scale: 1,
       transition: {
-        duration: 0.3
+        duration: 0.75
       }
-    },
+    }
   };
 };

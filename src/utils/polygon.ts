@@ -84,6 +84,8 @@ export class Polygon implements IPolygon {
     const turfPolygonA = Polygon.convertToTurfPolygon(this);
     const turfPolygonB = Polygon.convertToTurfPolygon(otherPolygon);
     const intersection = turf.intersect(turfPolygonB, turfPolygonA);
+    // console.log({ correct: this }, { draggable: otherPolygon })
+    // console.log({ correctArea: turf.area(turfPolygonA) }, { draggableArea: turf.area(turfPolygonB) })
     if (!intersection) {
       console.log("No intersection")
       return 0;
@@ -116,6 +118,25 @@ export class Polygon implements IPolygon {
     const points = polygon.points.map((point) => [point.x / 1000, point.y / 1000]);
 
     return turf.polygon([points]);
+  }
+
+  public offset({ offsetX, offsetY }: { offsetX: number, offsetY: number }) {
+    return new Polygon(
+      this.points.map(point => ({
+        x: point.x + offsetX,
+        y: point.y + offsetY,
+      }))
+    )
+  }
+  public scaleTopLeft({ scaleX, scaleY }: { scaleX: number, scaleY: number }) {
+    const topLeft = this.getCoordinates()
+    const scaledPoints = this.points.map(point => ({
+      x: topLeft.x + scaleX * (point.x - topLeft.x),
+      y: topLeft.y + scaleY * (point.y - topLeft.y),
+    }));
+
+    return new Polygon(scaledPoints);
+
   }
 
   public bb(): Polygon {

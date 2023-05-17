@@ -1,15 +1,16 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { PuzzleContext } from "..";
 import { CanvasState } from "../../../canvas/canvas-state";
+import { IPoint } from "../../../types";
 
 export const usePuzzleState = () => {
-  const { canvasRef, currentCanvasState, currentImageState, imagesState, isDrawingState, puzzleState, debugState } = useContext(PuzzleContext);
+  const { canvasRef, currentCanvasState, currentImageState, imagesState, isDrawingState, puzzleState, debugState, canvasDimenionsState } = useContext(PuzzleContext);
   const [images, setImages] = imagesState;
   const [currentImage, setCurrentImage] = currentImageState;
   const [isDrawing, setIsDrawing] = isDrawingState
   const [puzzles, setPuzzles] = puzzleState
   const [debug, setDebug] = debugState
-
+  const [canvasDimensions, setCanvasDimensions] = canvasDimenionsState
 
   const uploadImage = async (file: File) => {
     const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -54,7 +55,6 @@ export const usePuzzleState = () => {
     }
     setCurrentImage(image.image)
     startNewGame(image.image)
-    //clear canvas
   }
 
   const startNewGame = (image: HTMLImageElement | null = currentImage) => {
@@ -70,47 +70,48 @@ export const usePuzzleState = () => {
     currentCanvasState.current?.clearState()
     setPuzzles([])
     const ctx = canvasRef.current.getContext("2d");
-    const _canvasState = new CanvasState(ctx!, image);
+    const _canvasState = new CanvasState(ctx!, image, canvasDimensions);
     currentCanvasState.current = _canvasState;
 
   }
 
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    if (!currentCanvasState.current) {
-      return;
-    }
+  const handleDraw = (sx: number, sy: number) => {
 
-    currentCanvasState.current.pushPointToState({
-      x: e.nativeEvent.offsetX,
-      y: e.nativeEvent.offsetY,
-    });
-    setIsDrawing(true);
-  };
-
-  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
-    if (!currentCanvasState.current) {
-      return;
-    }
-    currentCanvasState.current.pushPointToState({
-      x: e.nativeEvent.offsetX,
-      y: e.nativeEvent.offsetY,
-    });
-    currentCanvasState.current.nextState();
-    setPuzzles([...currentCanvasState.current.puzzles]);
-    setIsDrawing(false);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     if (!isDrawing) return;
     if (!currentCanvasState.current) {
       return;
     }
     currentCanvasState.current.pushPointToState({
-      x: e.nativeEvent.offsetX,
-      y: e.nativeEvent.offsetY,
+      x: canvasDimensions.width * sx,
+      y: canvasDimensions.height * sy,
     });
   };
+
+  const handleStartDraw = () => {
+
+    if (!canvasRef.current) {
+      return
+    }
+    setIsDrawing(true)
+  }
+
+  const handleStopDraw = () => {
+    if (!currentCanvasState.current) {
+      return;
+    }
+    if (!canvasRef.current) {
+      return
+    }
+    const currentBB = canvasRef.current.getBoundingClientRect()
+
+    currentCanvasState.current.nextState({
+      scaleX: currentBB.width / canvasDimensions.width,
+      scaleY: currentBB.height / canvasDimensions.height
+    });
+    setPuzzles([...currentCanvasState.current.puzzles]);
+    setIsDrawing(false);
+  }
 
   const deletePuzzle = (index: number) => {
     if (!currentCanvasState.current) {
@@ -119,6 +120,13 @@ export const usePuzzleState = () => {
     currentCanvasState.current?.deleteStage(index);
     const puzzles = currentCanvasState.current.puzzles
     setPuzzles([...puzzles]);
+  }
+
+  const setCanvasHeight = (height: number) => {
+    setCanvasDimensions(state => ({ ...state, height }))
+  }
+  const setCanvasWidth = (width: number) => {
+    setCanvasDimensions(state => ({ ...state, width }))
   }
 
   return {
@@ -131,10 +139,17 @@ export const usePuzzleState = () => {
     startNewGame,
     puzzles,
     isDrawing,
-    handleMouseDown,
-    handleMouseMove,
-    handleMouseUp,
     deletePuzzle,
-    debug
+    debug,
+    setCanvasHeight,
+    setCanvasWidth,
+    canvasDimensions,
+    handleStartDraw,
+    handleStopDraw,
+    handleDraw,
+    scale: {
+      scaleX: (canvasRef.current?.getBoundingClientRect().width ?? 0) / canvasDimensions.width,
+      scaleY: (canvasRef.current?.getBoundingClientRect().height ?? 0) / canvasDimensions.height
+    }
   };
 };
