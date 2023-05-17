@@ -1,10 +1,9 @@
 import React from "react";
 import "./App.css";
 import styled from "styled-components";
-import { PuzzleCard } from "./components";
-import { ImageUploader } from "./components/image-uploader";
+import { PuzzleCard, Canvas, ImageUploader } from "./components";
 import { usePuzzleState } from "./context/puzzle/hooks";
-import { Canvas } from "./components/canvas";
+
 
 const StyledApp = styled.div`
   min-height: 100vh;

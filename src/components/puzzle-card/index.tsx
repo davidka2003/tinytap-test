@@ -1,13 +1,12 @@
 import { PanInfo, motion } from "framer-motion";
-import { FC, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { FC, useEffect, useMemo, useRef, useState } from "react";
 import { styled } from "styled-components";
 import { cardFlyOut } from "../../animations";
 import { Puzzle } from "../../canvas/puzzle";
 import { Polygon } from "../../utils";
-import { IPoint } from "../../types";
 import { usePuzzleState } from "../../context/puzzle/hooks";
 import { Button } from "../button";
-import { CheckIcon, Cross1Icon, Cross2Icon, IconJarLogoIcon, TrashIcon } from "@radix-ui/react-icons";
+import { CheckIcon, Cross2Icon, TrashIcon } from "@radix-ui/react-icons";
 import { Modal } from "../modal";
 
 export interface PuzzleCardProps {
